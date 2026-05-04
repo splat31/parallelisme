@@ -29,8 +29,7 @@ int main(int argc, char *argv[]){
       matrice_A[i*SIZE + j] = 1;// (int)rand()%10;
     }
   }
-
-  // Calcul en faisant varier le nombre de threads    
+  
   start = omp_get_wtime(); //openmp
   #pragma omp parallel num_threads(nb) private(i,j,spartielle)
   {
@@ -42,6 +41,7 @@ int main(int argc, char *argv[]){
       }
 
     }
+    //section critique 
     #pragma omp atomic
     somme+=spartielle;
   }

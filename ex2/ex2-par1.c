@@ -5,11 +5,13 @@
 #include <sys/time.h>
 #define SIZE 20000
 
+
+
 int main(int argc, char *argv[]){
 
   if (argc!=2 ) {
-    fprintf(stderr, "Usage ./ex2-par1 nbthreads\n");
-    return 1;
+    fprintf(stderr, "Usage ./ex2-par1 nbthreads\n"); //nbthread: nombre de thread qui seront utilisé pour le parallèlisme
+    exit(1);
   }
 
   int nb, i , j, somme=0;
@@ -17,10 +19,12 @@ int main(int argc, char *argv[]){
   double t,start,stop;
   int* matrice_A;
 
-  int spartielle[nb];
+  // Création d'un tableau de sommes partielles
+  int spartielle[nb][16];
   for (int i = 0; i < nb; i++) {
-    spartielle[i] = 0;
+    spartielle[i][0] = 0;
   }
+
   // Allocations
   matrice_A = (int*) malloc(SIZE*SIZE*sizeof(int)) ;
   
@@ -36,19 +40,23 @@ int main(int argc, char *argv[]){
   start = omp_get_wtime(); //openmp
   #pragma omp parallel num_threads(nb) private(i,j)
   {
-    int id = omp_get_thread_num();
+    int id = omp_get_thread_num();//recupere l'id pour savoir quelle partie de tableau le thread va utiliser
     #pragma omp for
     for(i = 0; i < SIZE; i++){
       for(j = 0; j < SIZE; j++){
-        spartielle[id]+=matrice_A[i*SIZE + j];
-        
+        spartielle[id][0]+=matrice_A[i*SIZE + j];
+      }
+    }
+
+    //Un thread s'occupe de calculer la somme finale après la synchro implicite du for
+    #pragma omp single 
+    {
+      for (int a = 0;a<nb;a++) {
+        somme+=spartielle[a][0];
       }
     }
   }
 
-  for (int a = 0;a<nb;a++) {
-        somme+=spartielle[a];
-      }
   stop=omp_get_wtime(); //openmp
   t=stop-start;
   printf("%d\t%f\n",nb,t);

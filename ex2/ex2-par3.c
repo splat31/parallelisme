@@ -28,10 +28,11 @@ int main(int argc, char *argv[]){
     }
   }
 
-  // Calcul en faisant varier le nombre de threads    
+  
   start = omp_get_wtime(); //openmp
   #pragma omp parallel num_threads(nb) private(i,j) 
   {
+    //reduction pour ajouter a la sommme
     #pragma omp for reduction (+:somme) nowait
     for(i = 0; i < SIZE; i++){
       for(j = 0; j < SIZE; j++){

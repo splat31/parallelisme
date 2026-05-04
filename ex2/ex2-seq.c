@@ -37,5 +37,3 @@ int main(int argc, char **argv){
   free(matrice_A);
   return EXIT_SUCCESS;
 }
-
-/* temps = 0.761012*/
