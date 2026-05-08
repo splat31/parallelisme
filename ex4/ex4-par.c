@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <omp.h>
 
+
 #define MAX_N 100
 
 int N = 0;
@@ -55,38 +56,46 @@ void read_problem(char *filename){
 
 
 int main (int argc, char * argv[]) {
-    if (argc!=2) {
-        fprintf(stderr, "Usage ./ex4-seq filename\n"); 
+    if (argc!=3) {
+        fprintf(stderr, "Usage ./ex4-par filename nbthreads\n"); 
         exit(1);
     }
     read_problem(argv[1]);
+
+    int nb = atoi(argv[2]);
     double start,stop,t;
     start = omp_get_wtime(); //openmp
-
     int (*S)[C+1] = malloc(sizeof(int[N][C+1]));//Allocation de S
 
     //Calcul de S
-    for (int j = 0; j<C+1;j++) {
-        if (M[0]<=j) {
-            S[0][j]=U[0];
-        } else {
-            S[0][j]=0;
+    #pragma omp parallel num_threads(nb)
+    {
+        #pragma omp for
+        for (int j = 0; j<C+1;j++) {
+            if (M[0]<=j) {
+                S[0][j]=U[0];
+            } else {
+                S[0][j]=0;
+            }
         }
-    }
-    for (int i = 1;i<N;i++) {
-        for (int j = 0;j<C+1;j++) {
-            if (M[i]<=j) {
-                if (S[i-1][j]<S[i-1][j-M[i]]+ U[i]) {
-                    S[i][j] = S[i-1][j-M[i]] + U[i];
+        for (int i = 1;i<N;i++) {
+            #pragma omp for
+            for (int j = 0;j<C+1;j++) {
+                if (M[i]<=j) {
+                    if (S[i-1][j]<S[i-1][j-M[i]]+ U[i]) {
+                        S[i][j] = S[i-1][j-M[i]] + U[i];
+                    } else {
+                        S[i][j] = S[i-1][j];
+                    }
                 } else {
                     S[i][j] = S[i-1][j];
                 }
-            } else {
-                S[i][j] = S[i-1][j];
             }
         }
     }
-  
+    
+    
+    
     //E stockera l'information de si les objets sont pris ou non (1 = oui, 0 = non)
     int E[N];
 
@@ -107,7 +116,7 @@ int main (int argc, char * argv[]) {
     }
     stop=omp_get_wtime(); //openmp
     t=stop-start;
-    printf("Temps d'exécution version séquentielle : %f\n",t);
+    printf("Temps d'exécution version parallèle avec %d threads: %f\n",nb,t);
     printf("Les objets pris sont:");
     for (int i = 0;i<N;i++) {
         if (E[i]==1) {

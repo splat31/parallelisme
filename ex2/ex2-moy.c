@@ -55,9 +55,7 @@ double par1(int* matrice_A, int nb) {
     }
 
 
-    stop=omp_get_wtime(); //openmp
-    t=stop-start;
-
+    start = omp_get_wtime(); //openmp
     //vérifie que la somme a bien était calculer comme on met que des 1 dans la matrice
     if (somme!=SIZE*SIZE) {
         fprintf(stderr, "Par1 a fait un mauvais calcul de somme\n");
