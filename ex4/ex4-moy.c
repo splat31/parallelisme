@@ -65,7 +65,7 @@ double seq(){
             E[i] = 1;
             Cactu = Cactu - M[i];
         } else { 
-            E[0]=0;
+            E[i]=0;
         }
     }
     //Cas 0
@@ -99,7 +99,7 @@ double par(int nb) {
     //Calcul de S
     #pragma omp parallel num_threads(nb)
     {
-        #pragma omp for
+        #pragma omp for nowait
         for (int j = 0; j<C+1;j++) {
             if (M[0]<=j) {
                 S[0][j]=U[0];
@@ -108,7 +108,7 @@ double par(int nb) {
             }
         }    
         for (int i = 1;i<N;i++) {
-            #pragma omp for
+            #pragma omp for 
             for (int j = 0;j<C+1;j++) {
                 if (M[i]<=j) {
                     if (S[i-1][j]<S[i-1][j-M[i]]+ U[i]) {

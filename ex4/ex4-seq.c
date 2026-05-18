@@ -98,7 +98,7 @@ int main (int argc, char * argv[]) {
             E[i] = 1;
             Cactu = Cactu - M[i];
         } else { 
-            E[0]=0;
+            E[i]=0;
         }
     }
     //Cas 0
