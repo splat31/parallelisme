@@ -41,7 +41,7 @@ color_image_type * loadColorImage(char *filename){
       while(fgetc(f) != '\n'); // aller jusqu'a la fin de la ligne
     }
   fseek( f, -1, SEEK_CUR);
-  fscanf(f,"%d %d\n", &width, &height);
+  fscanf(f,"%d %d\n", &width, &height); 
   fscanf(f,"%d\n", &max_value);
   image = malloc(sizeof(color_image_type));
   assert(image != NULL);
@@ -153,13 +153,25 @@ int main(int argc, char ** argv){
   color_image_type * col_img;
   grey_image_type * grey_img;
   grey_image_type * cons_img;
-  if (argc != 4){
-    printf("Usage: togrey <input image> <output image> <constrated output image>\n");
+  if (argc != 2){
+    printf("Usage: togrey <input image>\n");
     exit(-1);
   }
   char *input_file = argv[1];
-  char *output_file = argv[2];
-  char *output_file2 = argv[3];
+  char output_file[256];
+  char output_file2[256];
+
+  char name[128];
+  strcpy(name, argv[1]);
+
+  // enlève l'extension .ppm
+  char *dot = strrchr(name, '.');
+  if (dot)
+  *dot = '\0';
+
+  sprintf(output_file,"./obtained/seq/%s.grey.pgm",name);
+
+  sprintf(output_file2,"./obtained/seq/%s.contrast.pgm",name);
 
 
 

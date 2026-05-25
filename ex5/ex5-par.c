@@ -22,7 +22,7 @@ typedef struct grey_image_struct
   unsigned char * pixels;
 } grey_image_type;
 
-
+int nb;
 /**********************************************************************/
 
 color_image_type * loadColorImage(char *filename){
@@ -108,12 +108,14 @@ void saveColorImage(char * filename, color_image_type *image){
 /**********************************************************************/
 
 void colorToGrey(color_image_type *col_img, grey_image_type *grey_img){
-    for (int i=0; i < col_img->height ; i++)
-      for (int j=0; j < col_img->width ; j++){
+  #pragma omp parallel for num_threads(nb)
+  for (int i=0; i < col_img->height ; i++) {
+    for (int j=0; j < col_img->width ; j++){
         int index = i * col_img->width + j;
         color_pixel_type *pix = &(col_img->pixels[index]);
         grey_img->pixels[index] = (299*pix->r + 587*pix->g + 114*pix->b)/1000;
-      }
+    }
+  }
 }
 
 /**********************************************************************/
@@ -138,15 +140,15 @@ double contrasting (grey_image_type *grey_img,grey_image_type *cons_img,int nb) 
     C[0] = H[0];
     //Credit to Anthony
 
-    /*#pragma omp for schedule(dynamic , 10)
+    #pragma omp for schedule(dynamic , 10)
     for (int i = 1; i<256;i++) {
       for (int j = 0;j<=i;j++) {
         C[i]+= H[j];
       }
-    }*/
+    }/*
     for (int i = 1; i<256;i++) {
       C[i] = C[i-1]+H[i]; // en parallele il seras plus judicieux de faire: C[i] = H[0] + H[1] + ... + H[i-1] + H[i]
-    }
+    }*/
     int S=grey_img->height * grey_img->width;
 
     #pragma omp for
@@ -176,7 +178,7 @@ int main(int argc, char ** argv){
   char *input_file = argv[1];
   char *output_file = argv[2];
   char *output_file2 = argv[3];
-  int nb = atoi(argv[4]);
+  nb = atoi(argv[4]);
   
   col_img = loadColorImage(input_file);
   grey_img = createGreyImage(col_img->width, col_img->height);
