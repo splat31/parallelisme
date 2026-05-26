@@ -107,18 +107,24 @@ void saveColorImage(char * filename, color_image_type *image){
 
 /**********************************************************************/
 
-void colorToGrey(color_image_type *col_img, grey_image_type *grey_img){
-    for (int i=0; i < col_img->height ; i++)
-      for (int j=0; j < col_img->width ; j++){
-        int index = i * col_img->width + j;
-        color_pixel_type *pix = &(col_img->pixels[index]);
-        grey_img->pixels[index] = (299*pix->r + 587*pix->g + 114*pix->b)/1000;
-      }
+double colorToGrey(color_image_type *col_img, grey_image_type *grey_img){
+  double start,stop,t;
+  start = omp_get_wtime();
+  for (int i=0; i < col_img->height ; i++) {
+    for (int j=0; j < col_img->width ; j++){
+      int index = i * col_img->width + j;
+      color_pixel_type *pix = &(col_img->pixels[index]);
+      grey_img->pixels[index] = (299*pix->r + 587*pix->g + 114*pix->b)/1000;
+    }
+  }
+  stop = omp_get_wtime(); 
+  t = stop -start;
+  return t;
 }
 
 /**********************************************************************/
 
-double contrasting (grey_image_type *grey_img,grey_image_type *cons_img) {
+double greyToContrast (grey_image_type *grey_img,grey_image_type *cons_img) {
   int H[256] = {0};
   int C[256] = {0};
   
@@ -132,7 +138,7 @@ double contrasting (grey_image_type *grey_img,grey_image_type *cons_img) {
   }
   C[0] = H[0];
   for (int i = 1; i<256;i++) {
-    C[i] = C[i-1]+H[i]; // en parallele il seras plus judicieux de faire: C[i] = H[0] + H[1] + ... + H[i-1] + H[i]
+    C[i] = C[i-1]+H[i]; // // en parallele on pourras tester de faire: C[i] = H[0] + H[1] + ... + H[i-1] + H[i]
   }
 
   int S=grey_img->height * grey_img->width;
@@ -166,24 +172,23 @@ int main(int argc, char ** argv){
 
   // enlève l'extension .ppm
   char *dot = strrchr(name, '.');
-  if (dot)
-  *dot = '\0';
-
+  if (dot) {
+    *dot = '\0';
+  }
   sprintf(output_file,"./obtained/seq/%s.grey.pgm",name);
-
   sprintf(output_file2,"./obtained/seq/%s.contrast.pgm",name);
 
 
 
   col_img = loadColorImage(input_file);
   grey_img = createGreyImage(col_img->width, col_img->height);
-
-  colorToGrey(col_img, grey_img);
+  double time = 0;
+  time += colorToGrey(col_img, grey_img);
   
   saveGreyImage(output_file, grey_img);
   
   cons_img = createGreyImage(col_img->width, col_img->height);
-  double time = contrasting(grey_img,cons_img);
+  time += greyToContrast(grey_img,cons_img);
   printf("Temps d'exécution = %f\n" , time);
 
   saveGreyImage(output_file2, cons_img);

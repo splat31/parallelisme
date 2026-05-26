@@ -107,7 +107,9 @@ void saveColorImage(char * filename, color_image_type *image){
 
 /**********************************************************************/
 
-void colorToGrey(color_image_type *col_img, grey_image_type *grey_img){
+double colorToGrey(color_image_type *col_img, grey_image_type *grey_img){
+  double start,stop,t;
+  start = omp_get_wtime();
   #pragma omp parallel for num_threads(nb)
   for (int i=0; i < col_img->height ; i++) {
     for (int j=0; j < col_img->width ; j++){
@@ -116,11 +118,14 @@ void colorToGrey(color_image_type *col_img, grey_image_type *grey_img){
         grey_img->pixels[index] = (299*pix->r + 587*pix->g + 114*pix->b)/1000;
     }
   }
+  stop = omp_get_wtime(); 
+  t = stop -start;
+  return t;
 }
 
 /**********************************************************************/
 
-double contrasting (grey_image_type *grey_img,grey_image_type *cons_img,int nb) {
+double greyToContrast (grey_image_type *grey_img,grey_image_type *cons_img) {
   int H[256] = {0};
   int C[256] = {0};
   double start,stop,t;
@@ -138,7 +143,6 @@ double contrasting (grey_image_type *grey_img,grey_image_type *cons_img,int nb) 
     }
     
     C[0] = H[0];
-    //Credit to Anthony
 
     #pragma omp for schedule(dynamic , 10)
     for (int i = 1; i<256;i++) {
@@ -147,7 +151,7 @@ double contrasting (grey_image_type *grey_img,grey_image_type *cons_img,int nb) 
       }
     }/*
     for (int i = 1; i<256;i++) {
-      C[i] = C[i-1]+H[i]; // en parallele il seras plus judicieux de faire: C[i] = H[0] + H[1] + ... + H[i-1] + H[i]
+      C[i] = C[i-1]+H[i]; // en parallele on pourras tester de faire: C[i] = H[0] + H[1] + ... + H[i-1] + H[i]
     }*/
     int S=grey_img->height * grey_img->width;
 
@@ -171,24 +175,37 @@ int main(int argc, char ** argv){
   color_image_type * col_img;
   grey_image_type * grey_img;
   grey_image_type * cons_img;
-  if (argc != 5){
-    printf("Usage: togrey <input image> <output image> <constrated output image> <nbthreads>\n");
+  if (argc != 3){
+    printf("Usage: togrey <input image> <nbthreads>\n");
     exit(-1);
   }
   char *input_file = argv[1];
-  char *output_file = argv[2];
-  char *output_file2 = argv[3];
-  nb = atoi(argv[4]);
+  nb = atoi(argv[2]);
   
+  char output_file[256];
+  char output_file2[256];
+
+  char name[128];
+  strcpy(name, argv[1]);
+
+  // enlève l'extension .ppm
+  char *dot = strrchr(name, '.');
+  if (dot) {
+    *dot = '\0';
+  }
+  sprintf(output_file,"./obtained/par/%s.grey.pgm",name);
+  sprintf(output_file2,"./obtained/par/%s.contrast.pgm",name);
+
+
   col_img = loadColorImage(input_file);
   grey_img = createGreyImage(col_img->width, col_img->height);
-
-  colorToGrey(col_img, grey_img);
+  double time = 0;
+  time+=colorToGrey(col_img, grey_img);
   
   saveGreyImage(output_file, grey_img);
   
   cons_img = createGreyImage(col_img->width, col_img->height);
-  double time = contrasting(grey_img,cons_img,nb);
+  time += greyToContrast(grey_img,cons_img);
 
   saveGreyImage(output_file2, cons_img);
   printf("Temps d'exécution = %f\n" , time);
