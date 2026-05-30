@@ -30,14 +30,14 @@ double dijkstra();
 /******************************************************************************/
 int main ( int argc, char **argv ){
 
-  if (argc < 2){
-    fprintf(stderr,"Usage: dijkstra <graph file name>\n");
+  if (argc != 3){
+    fprintf(stderr,"Usage: dijkstra <graph file name> <nbthreads>\n");
     exit(-1);
   }
   else
     read_graph(argv[1]);
-
-  double time = dijkstra();
+  int nb = atoi(argv[2]);
+  double time = dijkstra(nb);
   printf("Temps d'exécution = %f\n" , time);
 
   free(nodes);
@@ -67,58 +67,68 @@ int get_distance(int node1, int node2){
 
 /******************************************************************************/
 
-double dijkstra(){
-    // returns computation time
-    double start,stop,t;
-    start = omp_get_wtime();
-
-    
-  int shortest_dist;
-  int nearest_node;
-
+double dijkstra(int nb){
+  double start, stop ,t;
+  start = omp_get_wtime();
   P[0] = 1;
-  for (int i = 1; i < num_nodes; i++)
+
+  #pragma omp parallel for num_threads(nb)
+  for (int i = 1; i < num_nodes; i++) {
     P[i] = 0;
-
-  for (int i = 0; i < num_nodes; i++)
-    d[i] = get_distance(0,i);
-
-  for (int step = 1; step < num_nodes; step++ ){
-    // find the nearest node
-    shortest_dist = INFINITE;
-    nearest_node = -1;
-    for (int i = 0; i < num_nodes; i++){
-        if ( !P[i] && d[i] < shortest_dist ){
-        shortest_dist = d[i];
-        nearest_node = i;
+  }
+  #pragma omp parallel for num_threads(nb)
+  for (int i = 0; i < num_nodes; i++) {
+    d[i] = get_distance(0, i);
+  }
+  for (int step = 1; step < num_nodes; step++) {
+      int shortest_dist = INFINITE;
+      int nearest_node = -1;
+      #pragma omp parallel num_threads(nb)
+      {
+          int local_dist = INFINITE;
+          int local_node = -1;
+          #pragma omp for nowait
+          for (int i = 0; i < num_nodes; i++) {
+              if (!P[i] && d[i] < local_dist) {
+                  local_dist = d[i];
+                  local_node = i;
+              }
+          }
+          #pragma omp critical
+          {
+              if (local_dist < shortest_dist) {
+                  shortest_dist = local_dist;
+                  nearest_node = local_node;
+              }
+          }
       }
-    }
-
-    if ( nearest_node == - 1 ){
-      fprintf(stderr,"Warning: Search ended early, the graph might not be connected.\n" );
-      break;
-    }
-
-    P[nearest_node] = 1;
-    for (int i = 0; i < num_nodes; i++)
-      if ( !P[i] ){
-        int dist = get_distance(nearest_node,i);
-        if ( dist < INFINITE )
-          if ( d[nearest_node] + dist < d[i] )
-            d[i] = d[nearest_node] + dist;
+      if (nearest_node == -1) {
+          fprintf(stderr,"Warning: Search ended early, the graph might not be connected.\n");
+          break;
+      }
+      P[nearest_node] = 1;
+      #pragma omp parallel for num_threads(nb)
+      for (int i = 0; i < num_nodes; i++) {
+          if (!P[i]) {
+              int dist = get_distance(nearest_node, i);
+              if (dist < INFINITE &&
+                  d[nearest_node] + dist < d[i]) {
+                  d[i] = d[nearest_node] + dist;
+              }
+          }
       }
   }
-    stop = omp_get_wtime(); 
-    t = stop -start;
-    
-    printf("Djikstra: %d",d[0]);
-    for (int i = 1;i<num_nodes;i++) {
-      printf(", %d",d[i]);
 
-    }
-    printf("\n");
-    return t;
-  
+  stop = omp_get_wtime();
+
+  printf("Djikstra: %d",d[0]);
+  for (int i = 1;i<num_nodes;i++) {
+    printf(", %d",d[i]);
+
+  }
+  printf("\n");
+  t = stop - start;
+  return t;
 }
 
 /******************************************************************************/
