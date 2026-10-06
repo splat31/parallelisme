@@ -12,8 +12,8 @@ __global__ void kreduce( unsigned int *d_vec,int size) {
         if (idx < offset) {
             d_vec[idx] = d_vec[idx] + d_vec[idx + offset];
         }
+        __syncthreads();
     }
-    __syncthreads();
 }
 
 void reduce( unsigned int *vec,  unsigned int*sum,int size) {
