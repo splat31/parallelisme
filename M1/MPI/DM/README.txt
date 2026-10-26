@@ -1,3 +1,4 @@
+wsl -d Ubuntu
 sudo apt update
 sudo apt install openmpi-bin python3-matplotlib libopenmpi-dev
 sudo apt install python3-pip

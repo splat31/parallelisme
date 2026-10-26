@@ -24,7 +24,7 @@ comm.Scatter(numbersall, numberspart, root=0)
 total=cumul(numberspart[0],numberspart[nb//size-1]+1)
 tabtotal=np.array([total], dtype='i')
 result= np.empty(1,dtype='i')
-comm.Reduce(tabtotal,result, op=MPI.SUM, root=0)
+comm.Reduce(tabtotal,result, op=MPI.SUM, root=0) 
 if rank == 0:
     print("Cumul is ",result[0])
 
