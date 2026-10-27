@@ -71,38 +71,30 @@ end = start + local_n
 nb_interaction = 0
 
 for _ in range(nb_turns):
-
-    # Reconstruire le tableau global des masses sur tous les processus
     comm.Allgather(local_masses, all_masses)
 
     if rank == 0 and display:
         display_plot(all_masses, springs)
 
-    # Chaque processus calcule les forces sur ses propres masses
     local_force = np.zeros((local_n, 2), dtype=float)
 
     for s in springs:
         i = int(s[IDA])
         j = int(s[IDB])
 
-        # Calculer le ressort si au moins une masse est locale
         if start <= i < end or start <= j < end:
             F = interaction(s, all_masses)
             nb_interaction += 1
-
-            # Ajouter la force sur i si i est locale
             if start <= i < end:
                 local_force[i - start] += F
-
-            # Ajouter la force opposée sur j si j est locale
             if start <= j < end:
                 local_force[j - start] -= F
 
-    # Mise à jour uniquement des masses locales
     for k in range(local_n):
         update(local_masses, k, local_force[k])
 
-# 5. Rassembler les masses finales sur le rang 0
+
+
 if rank == 0:
     final_masses = np.empty((nb_masses, 6), dtype='i')
 else:
