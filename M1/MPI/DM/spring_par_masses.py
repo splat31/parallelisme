@@ -28,16 +28,16 @@ if rank ==0:
         nb_masses = int(sys.argv[1])
         nb_springs = int(sys.argv[2])
         nb_turns = int(sys.argv[3])
-        params = (nb_masses, nb_springs, nb_turns, display)
+        params = np.array([nb_masses, nb_springs, nb_turns, display, 1], dtype='i')
     except:
-        params = None
+        params = np.zeros(5,dtype='i')
 else:
-    params = None
+    params = np.empty(5,dtype='i')
 
-params = comm.bcast(params, root=0)
+comm.Bcast(params, root=0)
 
 #Verifie si les arguments ont bien ete recu par 0. Arrete tout sinon
-if params is None :
+if params[4] == 0 :
     if rank == 0:
          print(f'Usage {sys.argv[0]} nb_masses nb_strings nb_turns [-nodisplay]')
     sys.exit(1)
@@ -47,18 +47,26 @@ if params is None :
 
 
 
-nb_masses, nb_springs, nb_turns, display = params
+nb_masses, nb_springs, nb_turns, display,paramok = params
 if rank == 0:
     masses, springs = generate_springs(nb_masses, nb_springs)
     time_start = time.time()
+    nb_springs_array = np.array([len(springs)], dtype='i')
 else:
     masses = None
     springs = None
-springs = comm.bcast(springs, root=0)
+    nb_springs_array = np.empty(1, dtype='i')
+
+comm.Bcast(nb_springs_array, root=0)
+nb_springs = int(nb_springs_array[0])
+
+if rank != 0:
+    springs = np.empty((nb_springs, 4), dtype='i')
+
+comm.Bcast(springs, root=0)
 
 
-
-# 3. Répartition des masses et indices
+#Répartition des masses et indices
 local_n = nb_masses // size
 local_masses = np.empty((local_n, 6), dtype='i')
 comm.Scatter(masses, local_masses, root=0)
@@ -119,7 +127,6 @@ if rank==0:
     total_interaction = sum(all_interactions)
     max_interaction = max(all_interactions)
     min_interaction = min(all_interactions)
-    print("Interactions par processus :", all_interactions)
     unbalance = max_interaction-min_interaction
     print('Duration:', delta_time)
     print('Signature:', signature(final_masses))
