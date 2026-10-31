@@ -32,6 +32,7 @@ nb_interaction = 0
 
 for _ in range(nb_turns):
     if display:
+        print(masses)
         display_plot(masses, springs)
 
     force = np.zeros((nb_masses, 2), dtype=float)

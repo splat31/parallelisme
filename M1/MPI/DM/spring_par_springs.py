@@ -68,7 +68,7 @@ comm.Bcast(masses, root=0)
 
 
 
-# 3. Répartition des masses et indices
+# 3. Répartition des springs et indices
 local_n = nb_springs // size
 local_springs = np.empty((local_n, 4), dtype='i')
 comm.Scatter(springs, local_springs, root=0)

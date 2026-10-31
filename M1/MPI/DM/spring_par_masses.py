@@ -80,8 +80,9 @@ nb_interaction = 0
 
 for _ in range(nb_turns):
     comm.Allgather(local_masses, all_masses)
-
+    
     if rank == 0 and display:
+        
         display_plot(all_masses, springs)
 
     local_force = np.zeros((local_n, 2), dtype=float)
@@ -92,11 +93,13 @@ for _ in range(nb_turns):
 
         if start <= i < end or start <= j < end:
             F = interaction(s, all_masses)
-            nb_interaction += 1
+        
             if start <= i < end:
                 local_force[i - start] += F
+                nb_interaction += 1
             if start <= j < end:
                 local_force[j - start] -= F
+        
 
     for k in range(local_n):
         update(local_masses, k, local_force[k])

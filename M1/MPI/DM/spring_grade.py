@@ -102,8 +102,8 @@ def grade_directory(dirname='.'):
         sys.exit(0)
 
     #param, sig = '300 20100 20', 147
-    param, sig = '12 12 1', -1510
-    #param, sig = '240 -1 100', -13737
+    #param, sig = '12 12 1', -1510
+    param, sig = '240 -1 100', -13737
 
     grade = 0
     res = {}
