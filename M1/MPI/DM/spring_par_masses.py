@@ -1,4 +1,4 @@
-#python3 spring_seq.py 8 -1 100
+
 #! /usr/bin/env python3
 
 import numpy as np
@@ -93,10 +93,9 @@ for _ in range(nb_turns):
 
         if start <= i < end or start <= j < end:
             F = interaction(s, all_masses)
-        
+            nb_interaction += 1
             if start <= i < end:
                 local_force[i - start] += F
-                nb_interaction += 1
             if start <= j < end:
                 local_force[j - start] -= F
         

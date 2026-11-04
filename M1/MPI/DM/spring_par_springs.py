@@ -1,4 +1,4 @@
-#python3 spring_seq.py 8 -1 100
+
 #! /usr/bin/env python3
 
 import numpy as np
