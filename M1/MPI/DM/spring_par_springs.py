@@ -7,14 +7,6 @@ import sys
 from spring_lib import *
 from mpi4py import MPI
 
-#structure data:
-#       -0 -> ID        (ID de la masse)
-#       -1 -> POSX      (Position horizontale)
-#       -2 -> POSY      (Position vertticale)
-#       -3 -> SPEEDX    (Vitesse horizontale)   
-#       -4 -> SPEEDY    (Vitesse verticale)
-#       -5 -> weight    (Masse)
-
 
 
 #Main
@@ -68,7 +60,7 @@ comm.Bcast(masses, root=0)
 
 
 
-# 3. Répartition des springs et indices
+#Répartition des springs et indices
 local_n = nb_springs // size
 local_springs = np.empty((local_n, 4), dtype='i')
 comm.Scatter(springs, local_springs, root=0)
@@ -81,18 +73,18 @@ for _ in range(nb_turns):
     if rank == 0 and display:
         display_plot(masses, springs)
 
-    local_force = np.zeros((nb_masses, 2), dtype=float)
+    local_force = np.zeros((nb_masses, 2), dtype='i')
 
     for s in local_springs:
-        i = int(s[IDA])
-        j = int(s[IDB])
+        i = s[IDA]
+        j = s[IDB]
 
         F = interaction(s, masses)
         local_force[i] += F
         local_force[j] -= F
         nb_interaction += 1
 
-    force = np.zeros_like(local_force)
+    force = np.zeros((nb_masses, 2), dtype='i')
     comm.Allreduce(local_force, force, op=MPI.SUM)
     for k in range(nb_masses):
         update(masses, k, force[k])

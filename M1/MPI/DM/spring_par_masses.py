@@ -7,13 +7,6 @@ import sys
 from spring_lib import *
 from mpi4py import MPI
 
-#structure data:
-#       -0 -> ID        (ID de la masse)
-#       -1 -> POSX      (Position horizontale)
-#       -2 -> POSY      (Position vertticale)
-#       -3 -> SPEEDX    (Vitesse horizontale)   
-#       -4 -> SPEEDY    (Vitesse verticale)
-#       -5 -> weight    (Masse)
 
 
 
@@ -85,11 +78,11 @@ for _ in range(nb_turns):
         
         display_plot(all_masses, springs)
 
-    local_force = np.zeros((local_n, 2), dtype=float)
+    local_force = np.zeros((local_n, 2), dtype='i')
 
     for s in springs:
-        i = int(s[IDA])
-        j = int(s[IDB])
+        i = s[IDA]
+        j = s[IDB]
 
         if start <= i < end or start <= j < end:
             F = interaction(s, all_masses)

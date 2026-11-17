@@ -1,9 +1,6 @@
-#! /usr/bin/env python3
-
 import numpy as np
 import time
 import sys
-
 from spring_lib import *
 
 try:
@@ -15,22 +12,26 @@ except:
     print(f'Usage {sys.argv[0]} nb_masses nb_strings nb_turns [-nodisplay]')
     sys.exit(0)
 
-
-masses, springs = generate_springs(nb_masses, nb_springs)
-
+masses,springs = generate_springs(nb_masses, nb_springs)
 time_start = time.time()
 nb_interaction = 0
 
 for _ in range(nb_turns):
 
-    
+    force = np.zeros((nb_masses,2))
+    for s in springs:
+        F = interaction(s,masses)
+        nb_interaction += 1
+        force[s[IDA]] += F
+        force[s[IDB]] -= F
+    for i in range(nb_masses):
+        update(masses,i,force[i])
     if display:
         display_plot(masses, springs)
 
-
 delta_time = time.time() - time_start
 
-# all_interactions should contain the number of calls of interaction function on all processes
+
 all_interactions = [nb_interaction]
 total_interaction = sum(all_interactions)
 max_interaction = max(all_interactions)

@@ -1,4 +1,4 @@
-#python3 spring_seq.py 8 -1 100
+
 #! /usr/bin/env python3
 
 import numpy as np
@@ -7,13 +7,6 @@ import sys
 from spring_lib import *
 from mpi4py import MPI
 
-#structure data:
-#       -0 -> ID        (ID de la masse)
-#       -1 -> POSX      (Position horizontale)
-#       -2 -> POSY      (Position vertticale)
-#       -3 -> SPEEDX    (Vitesse horizontale)   
-#       -4 -> SPEEDY    (Vitesse verticale)
-#       -5 -> weight    (Masse)
 
 
 
@@ -68,7 +61,7 @@ comm.Bcast(masses, root=0)
 
 
 
-# 3. Répartition des masses et indices
+#Répartition des masses, springs et indices
 local_n_springs = nb_springs // size
 local_springs = np.empty((local_n_springs, 4), dtype='i')
 comm.Scatter(springs, local_springs, root=0)
@@ -80,39 +73,22 @@ all_masses = np.empty((nb_masses, 6), dtype='i')
 start = rank * local_n_masses
 end = start + local_n_masses
 
-
-
-# Forces calculées localement par chaque processus
-local_force = np.zeros((nb_masses, 2), dtype=float)
-
-# Tableau des forces globales, uniquement sur le rang 0
-if rank == 0:
-    force = np.zeros((nb_masses, 2), dtype=float)
-else:
-    force = None
-
-# Tableau contenant uniquement les forces des masses locales
-local_force_update = np.zeros((local_n_masses, 2), dtype=float)
-
-
 nb_interaction = 0
+local_force = np.zeros((nb_masses, 2), dtype='i')
+force = np.zeros((nb_masses, 2), dtype='i')
 
 for _ in range(nb_turns):
-
-    # 1. Reconstruction du tableau global des masses
     comm.Allgather(local_masses, all_masses)
 
-    # 2. Affichage
     if rank == 0 and display:
-        display_plot(all_masses, springs)
+        display_plot(masses, springs)
 
-    # 3. Calcul des forces locales
-    local_force.fill(0.0)
+    local_force.fill(0)
 
     for s in local_springs:
 
-        i = int(s[IDA])
-        j = int(s[IDB])
+        i = s[IDA]
+        j = s[IDB]
 
         F = interaction(s, all_masses)
 
@@ -121,30 +97,10 @@ for _ in range(nb_turns):
 
         nb_interaction += 1
 
-    # 4. Réduction des forces sur le rang 0
-    comm.Reduce(
-        local_force,
-        force,
-        op=MPI.SUM,
-        root=0
-    )
-
-    # 5. Distribution des forces locales
-    comm.Scatter(
-        force,
-        local_force_update,
-        root=0
-    )
-
-    # 6. Mise à jour des masses locales
+    force.fill(0)
+    comm.Allreduce(local_force, force, op=MPI.SUM)
     for k in range(local_n_masses):
-
-        update(
-            local_masses,
-            k,
-            local_force_update[k]
-        )
-
+        update(local_masses, k, force[start + k])
 
 if rank == 0:
     final_masses = np.empty((nb_masses, 6), dtype='i')
